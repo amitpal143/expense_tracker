@@ -5,6 +5,7 @@ import connectDB  from './config/db.js';
 import dns from "dns";
 import userRouter from './Routes/router.js';
 import incomeRouter from './Routes/incomeroute.js';
+import expenseRouter from './Routes/expenserouter.js';
 
 dns.setServers(["1.1.1.1", "1.0.0.1"]);
 
@@ -26,6 +27,10 @@ app.use((req, res, next) => {
 app.use("/api/income", incomeRouter);
 
 console.log("INCOME ROUTER REGISTERED");
+
+app.use("/api/expense",expenseRouter);
+
+console.log("EXPENSE ROUTER REGISTERED");
 
 
 
