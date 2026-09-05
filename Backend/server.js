@@ -6,6 +6,7 @@ import dns from "dns";
 import userRouter from './Routes/router.js';
 import incomeRouter from './Routes/incomeroute.js';
 import expenseRouter from './Routes/expenserouter.js';
+import dashRouter from './Routes/dashboardroute.js';
 
 dns.setServers(["1.1.1.1", "1.0.0.1"]);
 
@@ -31,6 +32,10 @@ console.log("INCOME ROUTER REGISTERED");
 app.use("/api/expense",expenseRouter);
 
 console.log("EXPENSE ROUTER REGISTERED");
+
+app.use("/api/overview",dashRouter);
+
+console.log("OVERVIEW ");
 
 
 
