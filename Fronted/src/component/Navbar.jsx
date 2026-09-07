@@ -12,7 +12,7 @@ const Navbar = ({ user: propUser,setuser, onLogout }) => {
    
 const toggleMenu =()=> setMenuOpen((prev) => !prev);
 
-const Base_Url = 'http://localhost:5000/api';
+const Base_Url =  'http://localhost:5000/api';
 
   useEffect(()=>
 {

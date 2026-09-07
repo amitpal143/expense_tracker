@@ -1,16 +1,405 @@
-import React, {useState } from 'react'
+import React, {Activity, useEffect, useMemo, useState } from 'react'
 import {styles} from '../assets/dummystyle'
 import Navbar from './Navbar'
 import Sidebar from './sidebar'
+import { ArrowUp, Car, CreditCard, Gift, Home, PiggyBank, ShoppingCart, Utensils, Zap, DollarSign, ArrowDown } from 'lucide-react'
+import axios from 'axios'
 
 
 const Layout = ({onLogout,user}) => {
   const[sidebarCollapsed,setSidebarCollapsed] = useState(false);
+  const API_BASE='http://localhost:5000/api';
+
+  const CATEGORY_ICONS = {
+  Food: <Utensils className="w-4 h-4" />,
+  Housing: <Home className="w-4 h-4" />,
+  Transport: <Car className="w-4 h-4" />,
+  Shopping: <ShoppingCart className="w-4 h-4" />,
+  Entertainment: <Gift className="w-4 h-4" />,
+  Utilities: <Zap className="w-4 h-4" />,
+  Healthcare: <Activity className="w-4 h-4" />,
+  Salary: <ArrowUp className="w-4 h-4" />,
+  Freelance: <CreditCard className="w-4 h-4" />,
+  Savings: <PiggyBank className="w-4 h-4" />,
+};
+
+// filter the transaction from the server 
+
+const filterTransactions = (transactions, frame) => {
+  const now = new Date();
+  const today = new Date(now).setHours(0, 0, 0, 0);
+
+  switch (frame) {
+    case "daily":
+      return transactions.filter((t) => new Date(t.date) >= today);
+    case "weekly": {
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+      return transactions.filter((t) => new Date(t.date) >= startOfWeek);
+    }
+    case "monthly":
+      return transactions.filter(
+        (t) => new Date(t.date).getMonth() === now.getMonth()
+      );
+    default:
+      return transactions;
+  }
+};
+
+const safeArrayFromResponse = (res) => {
+  const body = res?.data;
+  if (!body) return [];
+  if (Array.isArray(body)) return body;
+  if (Array.isArray(body.data)) return body.data;
+  if (Array.isArray(body.incomes)) return body.incomes;
+  if (Array.isArray(body.expenses)) return body.expenses;
+  return [];
+};
+
+  const [transactions, setTransactions] = useState([]);
+  const [timeFrame, setTimeFrame] = useState("monthly");
+  const [loading, setLoading] = useState(false);
+  const [showAllTransactions, setShowAllTransactions] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+
+  // fetch the transaction  from the server 
+
+  const fetchTransactions = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const [incomeRes, expenseRes] = await Promise.all([
+        axios.post(`${API_BASE}/income/getincome`, { headers }),
+        axios.get(`${API_BASE}/expense/get`, { headers }),
+      ]);
+
+      const incomes = safeArrayFromResponse(incomeRes).map((i) => ({
+        ...i,
+        type: "income",
+      }));
+      const expenses = safeArrayFromResponse(expenseRes).map((e) => ({
+        ...e,
+        type: "expense",
+      }));
+
+      const allTransactions = [...incomes, ...expenses]
+        .map((t) => ({
+          id: t._id || t.id || t.id_str || Math.random().toString(36).slice(2),
+          description: t.description || t.title || t.note || "",
+          amount: t.amount != null ? Number(t.amount) : Number(t.value) || 0,
+          date: t.date || t.createdAt || new Date().toISOString(),
+          category: t.category || t.type || "Other",
+          type: t.type,
+          raw: t,
+        }))
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      setTransactions(allTransactions);
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.error(
+        "Failed to fetch transactions",
+        err?.response || err.message || err
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+  // add  the transaction either is expense  or income
+  const addTransaction = async (transaction) => {
+    try {
+      const token = localStorage.getItem("token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const endpoint =
+        transaction.type === "income" ? "income/addincome" : "expense/add";
+      await axios.post(`${API_BASE}/${endpoint}`, transaction, { headers });
+      await fetchTransactions();
+      return true;
+    } catch (err) {
+      console.error(
+        "Failed to add transaction",
+        err?.response || err.message || err
+      );
+      throw err;
+    }
+  };
+  // update  the transaction either is income or expense
+
+  const editTransaction = async (id, transaction) => {
+    try {
+      const token = localStorage.getItem("token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const endpoint =
+        transaction.type === "income" ? "income/updateincome" : "expense/update";
+      await axios.put(`${API_BASE}/${endpoint}/${id}`, transaction, {
+        headers,
+      });
+      await fetchTransactions();
+      return true;
+    } catch (err) {
+      console.error(
+        "Failed to edit transaction",
+        err?.response || err.message || err
+      );
+      throw err;
+    }
+  };
+
+  // delete the transaction either is income or expense 
+
+  const deleteTransaction = async (id, type) => {
+    try {
+      const token = localStorage.getItem("token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const endpoint = type === "income" ? "income/deleteincome" : "expense/delete";
+      await axios.delete(`${API_BASE}/${endpoint}/${id}`, { headers });
+      await fetchTransactions();
+      return true;
+    } catch (err) {
+      console.error(
+        "Failed to delete transaction",
+        err?.response || err.message || err
+      );
+      throw err;
+    }
+  };
+
+  useEffect(() => {
+    fetchTransactions();
+  }, []);
+
+  const filteredTransactions = useMemo(
+    () => filterTransactions(transactions, timeFrame),
+    [transactions, timeFrame]
+  );
+
+  const stats = useMemo(() => {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(now.getDate() - 30);
+
+    const last30DaysTransactions = transactions.filter(
+      (t) => new Date(t.date) >= thirtyDaysAgo
+    );
+
+    const last30DaysIncome = last30DaysTransactions
+      .filter((t) => t.type === "income")
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const last30DaysExpenses = last30DaysTransactions
+      .filter((t) => t.type === "expense")
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const allTimeIncome = transactions
+      .filter((t) => t.type === "income")
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const allTimeExpenses = transactions
+      .filter((t) => t.type === "expense")
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const savingsRate =
+      last30DaysIncome > 0
+        ? Math.round(
+            ((last30DaysIncome - last30DaysExpenses) / last30DaysIncome) * 100
+          )
+        : 0;
+
+    const last60DaysAgo = new Date(now);
+    last60DaysAgo.setDate(now.getDate() - 60);
+
+    const previous30DaysTransactions = transactions.filter((t) => {
+      const date = new Date(t.date);
+      return date >= last60DaysAgo && date < thirtyDaysAgo;
+    });
+
+    const previous30DaysExpenses = previous30DaysTransactions
+      .filter((t) => t.type === "expense")
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const expenseChange =
+      previous30DaysExpenses > 0
+        ? Math.round(
+            ((last30DaysExpenses - previous30DaysExpenses) /
+              previous30DaysExpenses) *
+              100
+          )
+        : 0;
+
+    return {
+      totalTransactions: transactions.length,
+      last30DaysIncome,
+      last30DaysExpenses,
+      last30DaysSavings: last30DaysIncome - last30DaysExpenses,
+      allTimeIncome,
+      allTimeExpenses,
+      allTimeSavings: allTimeIncome - allTimeExpenses,
+      last30DaysCount: last30DaysTransactions.length,
+      savingsRate,
+      expenseChange,
+    };
+  }, [transactions]);
+
+  const timeFrameLabel = useMemo(
+    () =>
+      timeFrame === "daily"
+        ? "Today"
+        : timeFrame === "weekly"
+        ? "This Week"
+        : "This Month",
+    [timeFrame]
+  );
+
+  const outletContext = {
+    transactions: filteredTransactions,
+    addTransaction,
+    editTransaction,
+    deleteTransaction,
+    refreshTransactions: fetchTransactions,
+    timeFrame,
+    setTimeFrame,
+    lastUpdated,
+  };
+
+  const getSavingsRating = (rate) =>
+    rate > 30 ? "Excellent" : rate > 20 ? "Good" : "Needs improvement";
+
+// ftech the transaction as a category vise 
+  const topCategories = useMemo(
+    () =>
+      Object.entries(
+        transactions
+          .filter((t) => t.type === "expense")
+          .reduce((acc, t) => {
+            acc[t.category] = (acc[t.category] || 0) + Number(t.amount);
+            return acc;
+          }, {})
+      )
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5),
+    [transactions]
+  );
+
+  const displayedTransactions = showAllTransactions
+    ? transactions
+    : transactions.slice(0, 4);
+
+
+
   return (
     
     <div className={styles.layout.root}>
     <Navbar user={user} onLogout={onLogout}/>
      <Sidebar user={user} isCollapsed={sidebarCollapsed} setIsCollapsed ={setSidebarCollapsed}/>
+
+     <div className={styles.layout.mainContainer(sidebarCollapsed)}>
+      <div className={styles.header.container}>
+        <div>
+          <h1 className={styles.header.title}>Dashboard</h1>
+          <p className ={styles.header.subtitle}>Welcome back</p>
+          
+        </div>
+         </div>
+         <div className={styles.statCards.grid}>
+          <div className={styles.statCards.card}>
+            <div className={styles.statCards.cardHeader}>
+              <div>
+                <p className={styles.statCards.cardTitle}>Total Balance</p>
+                <p className={styles.statCards.cardValue}>
+                  $
+                  {stats.allTimeSavings.toLocaleString("en-US",{
+                    maximumFractionDigits:2,
+                  })};
+                </p>
+              </div>
+              <div className={styles.statCards.iconContainer("teal")}>
+                <DollarSign className={styles.statCards.icon("teal")}/>
+              </div>
+            </div>
+            <p className ={styles.statCards.cardFooter}>
+              <span className="text-teal-600 font-medium">
+                +${stats.last30DaysSavings.toLocaleString()}
+              </span>{" "}
+              this month 
+            </p>
+          </div>
+
+  
+
+          <div className={styles.statCards.card}>
+            <div className={styles.statCards.cardHeader}>
+              <div>
+                <p className={styles.statCards.cardTitle}>Monthly Income</p>
+                <p className={styles.statCards.cardValue}>
+                  $
+                  {stats.last30DaysIncome.toLocaleString("en-US",{
+                    maximumFractionDigits:2,
+                  })};
+                </p>
+              </div>
+              <div className={styles.statCards.iconContainer("green")}>
+                <ArrowUp className={styles.statCards.icon("green")}/>
+              </div>
+            </div>
+            <p className ={styles.statCards.cardFooter}>
+              <span className="text-green-600 font-medium">
+                +12.5%
+              </span>{" "}
+              last month 
+            </p>
+          </div>
+
+          <div className={styles.statCards.card}>
+            <div className={styles.statCards.cardHeader}>
+              <div>
+                <p className={styles.statCards.cardTitle}>Monthly Expense</p>
+                <p className={styles.statCards.cardValue}>
+                  $
+                  {stats.last30DaysExpenses.toLocaleString("en-US",{
+                    maximumFractionDigits:2,
+                  })};
+                </p>
+              </div>
+              <div className={styles.statCards.iconContainer("red")}>
+                <ArrowDown className={styles.statCards.icon("red")}/>
+              </div>
+            </div>
+            <p className ={styles.statCards.cardFooter}>
+              <span className={`${styles.colors.expenseChange(
+                stats.expenseChange
+              )} font-medium`}>
+                {stats.expenseChange > 0? " +": " "}
+                {stats.expenseChange}%
+              </span>{" "}
+             from this month 
+            </p>
+          </div>
+          <div className={styles.statCards.card}>
+            <div className={styles.statCards.cardHeader}>
+              <div>
+                <p className={styles.statCards.cardTitle}>Saving Rate</p>
+                <p className={styles.statCards.cardValue}>
+                  $
+                  {stats.savingsRate}%
+                </p>
+              </div>
+              <div className={styles.statCards.iconContainer("blue")}>
+                <PiggyBank className={styles.statCards.icon("blue")}/>
+              </div>
+            </div>
+            <p className ={styles.statCards.cardFooter}>
+              <span>
+          {getSavingsRating(stats.savingsRate)}
+              </span>{" "}
+            </p>
+          </div>
+         </div>
+         <div class>
+
+         </div>
+     </div>
     </div>
   )
 }
