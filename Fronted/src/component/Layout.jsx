@@ -2,8 +2,9 @@ import React, {Activity, useEffect, useMemo, useState } from 'react'
 import {styles} from '../assets/dummystyle'
 import Navbar from './Navbar'
 import Sidebar from './sidebar'
-import { ArrowUp, Car, CreditCard, Gift, Home, PiggyBank, ShoppingCart, Utensils, Zap, DollarSign, ArrowDown } from 'lucide-react'
+import { ArrowUp, Car, CreditCard, Gift, Home, PiggyBank, ShoppingCart, Utensils, Zap, DollarSign, ArrowDown,TrendingUp, Clock, RefreshCw,Info } from 'lucide-react'
 import axios from 'axios'
+import { Outlet } from 'react-router-dom'
 
 
 const Layout = ({onLogout,user}) => {
@@ -396,7 +397,82 @@ const safeArrayFromResponse = (res) => {
             </p>
           </div>
          </div>
-         <div class>
+         <div className ={styles.grid.main}>
+          <div className={styles.grid.leftColumn}>
+            <div className={styles.cards.base}>
+              <div className={styles.cards.header}>
+                <h3 className={styles.cards.title}>
+                  <TrendingUp className="w-6 h-6 text-teal-500"/>
+                    finanical Overview
+                    <span className="text-sm text-teal-500 font-normal">
+                    ({timeFrameLabel})
+                    </span>
+                </h3>
+              </div>
+              <Outlet context={outletContext}/>
+            </div>
+          </div>
+          <div className={styles.grid.rightColumn}>
+            <div className={styles.cards.base}>
+              <div className={styles.transactions.cardHeader}>
+                <h3 className={styles.transactions.cardTitle}>
+                  <Clock className="w-6 h-6 text-purple-500"/>
+                  Recent Transaction
+                </h3>
+                <button onClick={fetchTransactions} disabled={loading}
+                className={styles.transactions.refreshButton}
+                >
+                < RefreshCw className={styles.transactions.refreshIcon(loading)}/>
+                
+                </button>
+                </div>
+                <div className={styles.transactions.dataStackingInfo}>
+                  <Info className={styles.transactions.dataStackingIcon}/>
+                  <span>
+              Transcation are stacked by date (newest first)
+                  </span>
+                  <div className ={styles.transactions.listContainer}>
+                    { displayedTransactions.map((transaction) =>
+                    {
+                      const{id,amount,category,type,description} = transaction;
+                      return(
+                        <div key={id} className={styles.transactions.transactionItem}>
+                          <div className="flex-item-center gap-1 mid:gap-4 lg:gap-3">
+                            <div 
+                            className={`p-2 rounded-lg $(styles.colors.transaction.bg(
+                            type
+                            )}`}
+                            >
+                              {CATEGORY_ICONS[category]}||
+                              (
+                                <DollarSign className={styles.transactions.icon}/>
+                              )
+                            </div>
+                            <div className={styles.transactions.details}>
+                              <p className={styles.transactions.description}>
+                                {description}
+                              </p>
+                              <p className={styles.transactions.meta}>
+                                {newDate(date).toLocaleString()}
+                                <span className="ml-2 capitalized">
+                                  {category}
+                                    </span>
+                              </p>
+                            </div>
+                          </div>
+                          <span className={styles.colors.transaction.text(type)}>
+                            {type=== "income" ? "+" :"-"}$ {Number(amount)}
+                          </span>
+                        </div>
+                      );
+                     })};
+                    
+
+                  </div>
+                  
+                </div>
+            </div>
+          </div>
 
          </div>
      </div>
