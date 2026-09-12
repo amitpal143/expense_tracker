@@ -2,7 +2,7 @@ import React, {Activity, useEffect, useMemo, useState } from 'react'
 import {styles} from '../assets/dummystyle'
 import Navbar from './Navbar'
 import Sidebar from './sidebar'
-import { ArrowUp, Car, CreditCard, Gift, Home, PiggyBank, ShoppingCart, Utensils, Zap, DollarSign, ArrowDown,TrendingUp, Clock, RefreshCw,Info } from 'lucide-react'
+import { ArrowUp, Car, CreditCard, Gift, Home, PiggyBank, ShoppingCart, Utensils, Zap, DollarSign, ArrowDown,TrendingUp, Clock, RefreshCw,Info, ChevronDown, PieChart } from 'lucide-react'
 import axios from 'axios'
 import { Outlet } from 'react-router-dom'
 
@@ -312,7 +312,7 @@ const safeArrayFromResponse = (res) => {
                   $
                   {stats.allTimeSavings.toLocaleString("en-US",{
                     maximumFractionDigits:2,
-                  })};
+                  })}
                 </p>
               </div>
               <div className={styles.statCards.iconContainer("teal")}>
@@ -337,7 +337,7 @@ const safeArrayFromResponse = (res) => {
                   $
                   {stats.last30DaysIncome.toLocaleString("en-US",{
                     maximumFractionDigits:2,
-                  })};
+                  })}
                 </p>
               </div>
               <div className={styles.statCards.iconContainer("green")}>
@@ -360,7 +360,7 @@ const safeArrayFromResponse = (res) => {
                   $
                   {stats.last30DaysExpenses.toLocaleString("en-US",{
                     maximumFractionDigits:2,
-                  })};
+                  })}
                 </p>
               </div>
               <div className={styles.statCards.iconContainer("red")}>
@@ -431,6 +431,7 @@ const safeArrayFromResponse = (res) => {
                   <span>
               Transcation are stacked by date (newest first)
                   </span>
+                  </div>
                   <div className ={styles.transactions.listContainer}>
                     { displayedTransactions.map((transaction) =>
                     {
@@ -464,19 +465,121 @@ const safeArrayFromResponse = (res) => {
                             {type=== "income" ? "+" :"-"}$ {Number(amount)}
                           </span>
                         </div>
-                      );
-                     })};
-                    
+                        
+                      )
+                     })}
 
+                
+        {transactions.length === 0 ?(
+          <div className={styles.transactions.emptyState}>
+            <div className={styles.transactions.emptyIconContainer}>
+              <Clock className={styles.transactions.emptyIcon}/>
                   </div>
-                  
+   <p className={styles.transactions.emptyText}>
+    No Recent transaction
+   </p>
+            </div>
+            ):(
+              <div className={styles.transactions.viewAllContainer}>
+                
+<button onClick={()=> setShowAllTransactions (!showAllTransactions)}>
+  <div className={styles.transactions.viewAllButton}
+  >
+    {showAllTransactions ?(
+      <>
+      <ChevronUP className="w-5 h-5"/>
+        Show less
+      </>
+    ):(
+      <>
+      <ChevronDown className="w-5 h-5"/>
+          view ALL Transaction({transactions.length})
+      </>
+    )}
+
+  </div>
+
+</button>
+              </div>
+      
+        )}
+                  </div>
                 </div>
+             <div className={styles.cards.base}>
+
+  {/* Header */}
+  <h3 className={styles.categories.title}>
+    <PieChart className={styles.categories.titleIcon} />
+    Spending by Category
+  </h3>
+  
+
+  {/* Categories */}
+  <div className={styles.categories.list}>
+    {topCategories.map(([category, amount]) => (
+      <div
+        key={category}
+        className={styles.categories.categoryItem}
+      >
+        <div className="flex items-center gap-3">
+
+          <div className={styles.categories.categoryIconContainer}>
+            {CATEGORY_ICONS[category] || (
+              <DollarSign
+                className={styles.categories.categoryIcon}
+              />
+            )}
+          </div>
+
+          <span className={styles.categories.categoryName}>
+            {category}
+          </span>
+
+        </div>
+
+        <span className={styles.categories.categoryAmount}>
+          ${amount.toLocaleString()}
+        </span>
+      </div>
+    ))}
+  </div>
+
+  {/* Summary */}
+  <div className={styles.categories.summaryContainer}>
+
+    <div className={styles.categories.summaryGrid}>
+
+      <div className={styles.categories.summaryIncomeCard}>
+        <p className={styles.categories.summaryTitle}>
+          Total Income
+        </p>
+
+        <p className={styles.categories.summaryValue}>
+          ${stats.allTimeIncome.toLocaleString()}
+        </p>
+      </div>
+
+      <div className={styles.categories.summaryExpenseCard}>
+        <p className={styles.categories.summaryTitle}>
+          Total Expense
+        </p>
+
+        <p className={styles.categories.summaryValue}>
+          ${stats.allTimeExpenses.toLocaleString()}
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
             </div>
           </div>
 
          </div>
      </div>
-    </div>
+
   )
 }
 
