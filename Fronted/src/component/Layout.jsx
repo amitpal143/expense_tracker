@@ -72,7 +72,7 @@ const safeArrayFromResponse = (res) => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
       const [incomeRes, expenseRes] = await Promise.all([
-        axios.post(`${API_BASE}/income/getincome`, { headers }),
+        axios.post(`${API_BASE}/income/getincome`,{}, { headers }),
         axios.get(`${API_BASE}/expense/get`, { headers }),
       ]);
 
