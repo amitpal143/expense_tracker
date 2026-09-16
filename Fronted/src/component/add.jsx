@@ -1,6 +1,5 @@
-import React from 'react'
+import React from "react";
 import { modalStyles } from "../assets/dummystyle";
-
 
 const AddTransactionModal = ({
   showModal,
@@ -8,147 +7,190 @@ const AddTransactionModal = ({
   newTransaction,
   setNewTransaction,
   handleAddTransaction,
-  type = "both",
-  title = "Add New Transaction",
-  buttonText = "Add Transaction",
-  categories = ["Food", "Housing", "Transport", "Shopping", "Entertainment", "Utilities", "Healthcare", "Salary", "Freelance", "Investments","Bonus" , "Other"],
-  color = "teal"
+  title = "Add Transaction",
 }) => {
-  if (!showModal) return null;
+  if (!showModal) {
+    return null;
+  }
 
-  // Get current date in YYYY-MM-DD format
+  // Input change
+  const handleChange = (e) => {
+    const { name, value } = e.target;
 
-  const today = new Date();
-  const currentYear = today.getFullYear();
-  const currentDate = today.toISOString().split('T')[0];
-  const minDate = `${currentYear}-01-01`;
+    setNewTransaction((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
-  const colorClass = modalStyles.colorClasses[color];
+  // Submit form
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!newTransaction.description.trim()) {
+      alert("Please enter description");
+      return;
+    }
+
+    if (!newTransaction.amount || Number(newTransaction.amount) <= 0) {
+      alert("Please enter a valid amount");
+      return;
+    }
+
+    if (!newTransaction.category) {
+      alert("Please select category");
+      return;
+    }
+
+    await handleAddTransaction();
+  };
 
   return (
     <div className={modalStyles.overlay}>
-<div className={modalStyles.modalContainer}>
-      <div className={modalStyles.modalHeader}>
-        <h3 className={modalStyles.modalTitle}>
-       {title}
-        </h3>
-        <button onClick={()=>{setShowModal(false)}}>
-          
-         className={modalStyles.closeButton}
-         
-         <X size={24}/>
-        </button>
-      </div>
-      <form onSubmit={(e)=>
-        {
-          e.preventDefault();
-          handleAddTransaction();
-        }
-      }
-      >
-<div  className={modalStyles.form}>
-  <div>
-  <label className={modalStyles.label}>Description</label>
-        <input 
-        type="text"
-         value={newTransaction.description}
-        onChange={(e)=> 
-          setNewTransaction((prev)=>({
-                  ...prev,
-                  description:e.target.value,
+      <div className={modalStyles.modalContainer}>
 
-          }))
-        } className={modalStyles.input(colorClass.ring)}
-          placeholder={type ==="both" ? "salary,fund,etc.": "Gorecrie,Rent,etc"}required
-          />
-  </div>
+        {/* Header */}
+        <div className={modalStyles.modalHeader}>
+          <h3 className={modalStyles.modalTitle}>
+            {title}
+          </h3>
 
-   <div>
-  <label className={modalStyles.label}>amount</label>
-        <input 
-        type="text"
-         value={newTransaction.amount}
-        onChange={(e)=> 
-          setNewTransaction((prev)=>({
-                  ...prev,
-                  amount:e.target.value,
+          <button
+            type="button"
+            onClick={() => setShowModal(false)}
+            className={modalStyles.closeButton}
+          >
+            ✕
+          </button>
+        </div>
 
-          }))
-        } className={modalStyles.input(colorClass.ring)}
-          placeholder="0.00"
-          required
-          />
-  </div>
+        {/* Form */}
+        <form onSubmit={handleSubmit}>
 
-              {type === "both" && (
-              <div>
-                <label className={modalStyles.label}>Type</label>
-                <div className={modalStyles.typeButtonContainer}>
-                  <button 
-                    type="button"
-                    className={modalStyles.typeButton(
-                      newTransaction.type === 'income', 
-                      modalStyles.colorClasses.teal.typeButtonSelected
-                    )}
-                    onClick={() => setNewTransaction(prev => ({...prev, type: 'income'}))}
-                  >
-                    Income
-                  </button>
-                  <button 
-                    type="button"
-                    className={modalStyles.typeButton(
-                      newTransaction.type === 'expense', 
-                      modalStyles.colorClasses.orange.typeButtonSelected
-                    )}
-                    onClick={() => setNewTransaction(prev => ({...prev, type: 'expense'}))}
-                  >
-                    Expense
-                  </button>
-                </div>
-              </div>
-            )}
-            <div>
-              <label className={modalStyles.label}>Categories</label>
-              
-     <select value={newTransaction.categories}>
-                    onChange={(e)=>
-              {
-                setNewTransaction(prev =>({
-                  ...prev,
-                   categories:e.target.value
-                  }))
-                }} className={modalStyles.input(colorClass.ring)} 
-            {categories.map((cat)=>
-            {
-              <option value={cat} key={cat}>
-                {cat}
-              </option>
-            })}
-     </select>
-            </div>
-            <div>
-              <label className={modalStyles.label}>Date </label>
-              <input type="date" value={newTransaction.date}
-              onChange={(e)=>
-              {
-                newTransaction(prev=>({
-                  ...prev,
-                  date: e.target.value
-                }))
-              }} className={modalStyles.input(colorClass.ring)}min={minDate} max={currentDate}required
-              
-              />  
-            </div>
-            <button type="submit" className={modalStyles.submitButton(colorClass.button)}>
-                {buttonText}
+          {/* Transaction Type */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Transaction Type
+            </label>
+
+            <select
+              name="type"
+              value={newTransaction.type || "expense"}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none"
+            >
+              <option value="expense">Expense</option>
+              <option value="income">Income</option>
+            </select>
+          </div>
+
+          {/* Description */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Description
+            </label>
+
+            <input
+              type="text"
+              name="description"
+              value={newTransaction.description || ""}
+              onChange={handleChange}
+              placeholder="Enter description"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none"
+            />
+          </div>
+
+          {/* Amount */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Amount
+            </label>
+
+            <input
+              type="number"
+              name="amount"
+              value={newTransaction.amount || ""}
+              onChange={handleChange}
+              placeholder="Enter amount"
+              min="0"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none"
+            />
+          </div>
+
+          {/* Category */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Category
+            </label>
+
+            <select
+              name="category"
+              value={newTransaction.category || ""}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none"
+            >
+              {newTransaction.type === "income" ? (
+                <>
+                  <option value="Salary">Salary</option>
+                  <option value="Business">Business</option>
+                  <option value="Freelance">Freelance</option>
+                  <option value="Investment">Investment</option>
+                  <option value="Other">Other</option>
+                </>
+              ) : (
+                <>
+                  <option value="Food">Food</option>
+                  <option value="Transport">Transport</option>
+                  <option value="Shopping">Shopping</option>
+                  <option value="Entertainment">Entertainment</option>
+                  <option value="Bills">Bills</option>
+                  <option value="Health">Health</option>
+                  <option value="Education">Education</option>
+                  <option value="Other">Other</option>
+                </>
+              )}
+            </select>
+          </div>
+
+          {/* Date */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Date
+            </label>
+
+            <input
+              type="date"
+              name="date"
+              value={newTransaction.date || ""}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none"
+            />
+          </div>
+
+          {/* Buttons */}
+          <div className="flex justify-end gap-3">
+
+            <button
+              type="button"
+              onClick={() => setShowModal(false)}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100"
+            >
+              Cancel
             </button>
-</div>
-      </form>
-      
+
+            <button
+              type="submit"
+              className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
+            >
+              Add Transaction
+            </button>
+
+          </div>
+
+        </form>
+      </div>
     </div>
-    </div>
-    
-  )
+  );
 };
 
 export default AddTransactionModal;
