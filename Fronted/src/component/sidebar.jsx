@@ -28,7 +28,7 @@ const MENU_ITEMS = [
     icon: <ArrowUp size={20} />
   },
   {
-    text: "Expenses",
+    text: "Expense",
     path: "/expense",
     icon: <ArrowDown size={20} />
   },

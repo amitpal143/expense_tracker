@@ -12,6 +12,9 @@ import Dashboard from "./pages/Dashboard";
 import Login from "./component/login";
 import Signup from "./component/Signup";
 import axios from "axios";
+import Income from "./pages/Income";
+import Expense from "./pages/Expense";
+import Profile from "./pages/Profile";
 
 const API_URL = "http://localhost:5000/api";
 
@@ -473,8 +476,36 @@ const App = () => {
               />
             }
           />
-
+           <Route
+            path="/income"
+            element={
+              <Income
+                transaction={transaction}
+                addTransaction={addTransaction}
+                editTransaction={editTransaction}
+                deleteTransaction={deleteTransaction}
+                refreshTransactions={refreshTransactions}
+              />
+            }
+          />
+                     <Route
+            path="/expense"
+            element={
+              <Expense
+                transaction={transaction}
+                addTransaction={addTransaction}
+                editTransaction={editTransaction}
+                deleteTransaction={deleteTransaction}
+                refreshTransactions={refreshTransactions}
+              />
+            }
+          />
+          <Route path="/profile" element={<Profile user={user}
+          onUpdateProfile={updateuserdata} onLogout={handleLogout}
+          />}/>
         </Route>
+        <Route path="*" element={<Navigate to={user ? "/":"login"}replace />}
+        />
 
       </Routes>
     </>
