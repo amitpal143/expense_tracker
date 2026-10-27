@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const API_URL = import.meta.env.VITE_API_URL || "https://expense-tracker-7jqm.onrender.com/api";
+export const API_URL = import.meta.env.VITE_API_URL || "[https://expense-tracker-7jqm.onrender.com/api](https://expense-tracker-7jqm.onrender.com/api)";
 
 // The token lives in localStorage ("Remember me") or sessionStorage (default).
 export const getToken = () =>
