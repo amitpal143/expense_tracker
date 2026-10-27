@@ -4,13 +4,12 @@ import { addincome, deleteincome, downloadsheet, getincome, incomeoverview, upda
 
 const incomeRouter = express.Router();
 
-incomeRouter.post("/addincome",authMiddleware,addincome);
-incomeRouter.post("/getincome",authMiddleware,getincome);
-
+incomeRouter.post("/addincome", authMiddleware, addincome);
+incomeRouter.post("/getincome", authMiddleware, getincome);
+incomeRouter.get("/getincome", authMiddleware, getincome); // GET alias (REST-friendly)
 incomeRouter.put("/updateincome/:id", authMiddleware, updateincome);
-incomeRouter.get("/downloadsheet",authMiddleware,downloadsheet);
-incomeRouter.get("/incomeoverview",authMiddleware,incomeoverview);
-
-incomeRouter.delete("/deleteincome/:id",authMiddleware,deleteincome);
+incomeRouter.delete("/deleteincome/:id", authMiddleware, deleteincome);
+incomeRouter.get("/downloadsheet", authMiddleware, downloadsheet);
+incomeRouter.get("/incomeoverview", authMiddleware, incomeoverview);
 
 export default incomeRouter;

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { sidebarStyles, cn } from '../assets/dummystyle'
+import { sidebarStyles, cn } from "../assets/dummystyle"
 import { AnimatePresence, motion, scale } from 'framer-motion'
 import { useLocation, useNavigate, Link} from 'react-router-dom'
 
@@ -14,6 +14,7 @@ import {
   X,
   
 } from 'lucide-react'
+import { clearToken } from "../utils/auth";
 
 
 const MENU_ITEMS = [
@@ -95,7 +96,7 @@ const Sidebar = ({ user, isCollapsed, setIsCollapsed }) => {
 
   // Logout
   const handleLogout = () => {
-    localStorage.removeItem("token")
+    clearToken()
     navigate("/login")
   }
 

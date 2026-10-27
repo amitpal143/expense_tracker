@@ -26,6 +26,6 @@ export const exportToexcel = (
     );
 
   } catch (error) {
-    console.log("File doesn't download:", error);
+    console.error("File doesn't download:", error);
   }
 };  

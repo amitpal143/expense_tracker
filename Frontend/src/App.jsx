@@ -9,14 +9,14 @@ import {
 } from "react-router-dom";
 import Layout from "./component/Layout";
 import Dashboard from "./pages/Dashboard";
-import Login from "./component/login";
+import Login from "./component/Login";
 import Signup from "./component/Signup";
 import axios from "axios";
 import Income from "./pages/Income";
 import Expense from "./pages/Expense";
 import Profile from "./pages/Profile";
+import { getToken, API_URL } from "./utils/auth";
 
-const API_URL = "http://localhost:5000/api";
 
 // Get transactions from localStorage
 const getTransactionFromStorage = () => {
@@ -28,7 +28,7 @@ const getTransactionFromStorage = () => {
 //  ProtectedRoute 
 
 const ProtectedRoute = ({ user, children }) => {
-  const localtoken = localStorage.getItem("token");
+  const localtoken = getToken();
   const sessiontoken = sessionStorage.getItem("token");
 
   const hasToken = localtoken || sessiontoken;
@@ -126,7 +126,7 @@ const App = () => {
       sessionStorage.removeItem("token");
 
     } catch (error) {
-      console.log(
+      console.error(
         "auth error",
         error
       );
@@ -145,7 +145,7 @@ const App = () => {
     setuser(updatedUser);
 
     const localtoken =
-      localStorage.getItem("token");
+      getToken();
 
     const sessiontoken =
       sessionStorage.getItem("token");
@@ -178,7 +178,7 @@ const App = () => {
           sessionStorage.getItem("user");
 
         const localtoken =
-          localStorage.getItem("token");
+          getToken();
 
         const sessiontoken =
           sessionStorage.getItem("token");
@@ -219,7 +219,7 @@ const App = () => {
               }
             );
 
-            const profile = res.data;
+            const profile = res.data?.user ?? res.data;
 
             persistAuth(
               profile,
@@ -228,7 +228,7 @@ const App = () => {
             );
 
           } catch (fetcherr) {
-            console.log(
+            console.error(
               "fetch error updateuser",
               fetcherr
             );
@@ -238,7 +238,7 @@ const App = () => {
         }
 
       } catch (error) {
-        console.log(
+        console.error(
           "Auth error",
           error
         );
@@ -252,7 +252,7 @@ const App = () => {
           );
 
         } catch (error) {
-          console.log(
+          console.error(
             "transaction is not set",
             error
           );
@@ -274,7 +274,7 @@ const App = () => {
       );
 
     } catch (error) {
-      console.log(
+      console.error(
         "transaction not found",
         error
       );

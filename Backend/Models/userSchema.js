@@ -2,27 +2,15 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
     {
-        name:{
-        type:String,
-        required:true,
-        },
-
-        email:{
-            type:String,
-            required:true,
-            unique:true,
-        },
-
-        password:
-        {
-            type:String,
-            required:true,
-
-        }
-    }
+        name: { type: String, required: true, trim: true },
+        email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+        password: { type: String, required: true },
+        // Tokens issued before this time are rejected (set on password change)
+        passwordChangedAt: { type: Date, default: null },
+    },
+    { timestamps: true }
 );
 
-
-const schema = mongoose.models.user || mongoose.model("user",userSchema);
+const schema = mongoose.models.user || mongoose.model("user", userSchema);
 
 export default schema;

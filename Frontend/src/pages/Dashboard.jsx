@@ -51,21 +51,20 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
+import { getToken, API_URL } from "../utils/auth";
 
 // =====================================================
 // SERVER ENDPOINT
 // =====================================================
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = API_URL;
 
 // =====================================================
 // AUTH HEADER
 // =====================================================
 
 const getAuthheader = () => {
-  const token = localStorage.getItem("token");
-
-  console.log("TOKEN:", token);
+  const token = getToken();
 
   return token
     ? {
@@ -587,11 +586,6 @@ const Dashboard = () => {
       newTransaction.type
     ).toLowerCase();
 
-    console.log(
-      "Transaction Type:",
-      transactionType
-    );
-
     // -----------------------------------------------
     // Payload
     // -----------------------------------------------
@@ -620,7 +614,6 @@ const Dashboard = () => {
       // =============================================
 
       if (transactionType === "income") {
-        console.log("Adding INCOME:", payload);
 
         await axios.post(
           `${API_BASE}/income/addincome`,
@@ -636,7 +629,6 @@ const Dashboard = () => {
       // =============================================
 
       else if (transactionType === "expense") {
-        console.log("Adding EXPENSE:", payload);
 
         await axios.post(
           `${API_BASE}/expense/add`,

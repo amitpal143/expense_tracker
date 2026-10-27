@@ -21,16 +21,17 @@ import {
   ReferenceLine,
 } from "recharts";
 import axios from "axios";
-import { exportToexcel } from "../utils/exportUtils";
+import { exportToexcel } from "../utils/exportutils";
 import FinancialCard from "../component/FinancialCard";
-import TimeFrameSelector from "../component/TimeFrame";
+import TimeFrameSelector from "../component/Timeframe";
 import TransactionItem from "../component/TransactionItem";
-import AddTransactionModal from "../component/Add";
+import AddTransactionModal from "../component/add";
 import { getTimeFrameRange, generateChartPoints } from "../component/helper";
 import { CATEGORY_ICONS } from "../assets/color";
 import { expensePageStyles as styles } from "../assets/dummystyle";
+import { getToken, API_URL } from "../utils/auth";
 
-const API_BASE = "http://localhost:4000/api";
+const API_BASE = API_URL;
 
 /**
  * Helper: convert date (or datetime) to ISO by attaching client current time
@@ -77,6 +78,7 @@ const ExpensePage = () => {
   const [editForm, setEditForm] = useState({
     description: "",
     amount: "",
+    type:"expense",
     category: "Food",
     date: new Date().toISOString().split("T")[0],
   });
@@ -97,7 +99,7 @@ const ExpensePage = () => {
 
   // Auth headers helper
   const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem("token");
+    const token = getToken();
     return token ? { Authorization: `Bearer ${token}` } : {};
   }, []);
 
@@ -266,6 +268,7 @@ const ExpensePage = () => {
         description: newTransaction.description.trim(),
         amount: parseFloat(newTransaction.amount),
         category: newTransaction.category,
+        type:"expense",
         date: toIsoWithClientTime(newTransaction.date),
       };
 
@@ -302,6 +305,7 @@ const ExpensePage = () => {
         description: editForm.description.trim(),
         amount: parseFloat(editForm.amount),
         category: editForm.category,
+        type:"expense",
         date: toIsoWithClientTime(editForm.date),
       };
 
@@ -318,10 +322,10 @@ const ExpensePage = () => {
     await handleApiRequest('delete', `/expense/delete/${id}`);
   };
 
-  // Export -> GET /expense/downloadexcel (server) with client fallback
+  // Export -> GET /expense/download (server) with client fallback
   const handleExport = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/expense/downloadexcel`, {
+      const res = await axios.get(`${API_BASE}/expense/download`, {
         headers: getAuthHeaders(),
         responseType: "blob",
       });

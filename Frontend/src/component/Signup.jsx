@@ -3,10 +3,10 @@ import { signupStyles } from "../assets/dummystyle";
 import { useNavigate,Link } from "react-router-dom";
 import { User, Mail, Lock, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import axios from "axios";
+import { API_URL } from "../utils/auth";
 
 const Signup = ({
   onSignup,
-  API_URL = "http://localhost:5000/api",
 }) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -72,8 +72,8 @@ const Signup = ({
 
     if (!password) {
       newErrors.password = "Password is required";
-    } else if (password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
+    } else if (password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters";
     }
 
     setError(newErrors);
@@ -224,7 +224,7 @@ const Signup = ({
           <form onSubmit={handleSubmit} noValidate>
 
             {/* Name */}
-            <div className="mb-6">
+            <div className="mb-4">
 
               <label
                 htmlFor="name"
@@ -264,7 +264,7 @@ const Signup = ({
             </div>
 
             {/* Email */}
-            <div className="mb-6">
+            <div className="mb-4">
 
               <label
                 htmlFor="email"
@@ -304,7 +304,7 @@ const Signup = ({
             </div>
 
             {/* Password */}
-            <div className="mb-6">
+            <div className="mb-4">
 
               <label
                 htmlFor="password"

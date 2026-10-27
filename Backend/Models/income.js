@@ -1,46 +1,19 @@
 import mongoose from "mongoose";
 
-const incomeschema = new mongoose.Schema(
+const schema = new mongoose.Schema(
     {
-        description :
+        description: { type: String, required: true, trim: true, maxlength: 200 },
+        amount: { type: Number, required: true, min: [0.000001, "Amount must be positive"], max: 1e12 },
+        category: { type: String, required: true, trim: true, maxlength: 50 },
+        date: { type: Date, required: true },
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true, index: true },
+        type: { type: String, required: true, enum: ["income"], default: "income" },
+    },
+    { timestamps: true }
+);
 
-      {
-      type:String,
-      required:true,
-        },
- amount:
- {
-  type:Number,
-  required:true,
- },
- category:
- {
-    type:String,
-    required:true,
- },
- date:
- {
- type:Date,
- required:true,
+schema.index({ userId: 1, date: -1 });
 
- },
- userId:
- {
-    type:mongoose.Schema.Types.ObjectId,
-    ref:"user",
-    required:true,
- },
- type:
- {
-    type:String,
-    required:true,
- },
-  },
-  {
- timestamps:true,
-  }
-)
+const model = mongoose.models.income || mongoose.model("income", schema);
 
-const incomemodel = mongoose.models.income || mongoose.model("income",incomeschema);
-
-export default incomemodel;
+export default model;

@@ -3,10 +3,10 @@ import { loginStyles } from "../assets/dummystyle";
 import { User, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useNavigate, Link} from "react-router-dom";
 import axios from "axios";
+import { API_URL } from "../utils/auth";
 
 const Login = ({
   onLogin,
-  API_URL = "http://localhost:5000/api",
 }) => {
 
   // -----------------------------

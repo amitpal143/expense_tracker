@@ -4,6 +4,7 @@ import image1 from '../assets/image.png'
 import { useNavigate } from 'react-router-dom'
 import { ChevronDown } from 'lucide-react'
 import axios from'axios'
+import { getToken, clearToken, API_URL } from "../utils/auth";
 
 const Navbar = ({ user: propUser,setuser, onLogout }) => {
   const navigate = useNavigate()
@@ -12,18 +13,18 @@ const Navbar = ({ user: propUser,setuser, onLogout }) => {
    
 const toggleMenu =()=> setMenuOpen((prev) => !prev);
 
-const Base_Url =  'http://localhost:5000/api';
+const Base_Url =  API_URL;
 
   useEffect(()=>
 {
     const fetchuserData = async ()=>
     {
 try {
-     const token = localStorage.getItem("token");
+     const token = getToken();
 
      if(!token) return
      
-     const response = await axios.get(`${Base_Url}/user/me`,{
+     const response = await axios.get(`${Base_Url}/user/getuser`,{
        headers: {
               Authorization: `Bearer ${token}`,
 },
@@ -33,7 +34,7 @@ try {
 } 
 
 catch (error) {
-    console.log("failed upload profile ",error);
+    console.error("failed upload profile ",error);
 }
     }
  if(!propUser)
@@ -49,7 +50,7 @@ catch (error) {
  const handleLogout = ()=>
 {
    setMenuOpen(false);
-   localStorage.removeItem("token");
+   clearToken();
    onLogout?.();
  navigate("/login");
 };

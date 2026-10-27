@@ -29,11 +29,12 @@ import {
 
 import axios from "axios";
 import { Outlet } from "react-router-dom";
+import { getToken, API_URL } from "../utils/auth";
 
 const Layout = ({ onLogout, user }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  const API_BASE = "http://localhost:5000/api";
+  const API_BASE = API_URL;
 
   const CATEGORY_ICONS = {
     Food: <Utensils className="w-4 h-4" />,
@@ -103,7 +104,7 @@ const Layout = ({ onLogout, user }) => {
     try {
       setLoading(true);
 
-      const token = localStorage.getItem("token");
+      const token = getToken();
 
       const headers = token
         ? { Authorization: `Bearer ${token}` }
@@ -181,7 +182,7 @@ const Layout = ({ onLogout, user }) => {
   // add the transaction either is expense or income
   const addTransaction = async (transaction) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
 
       const headers = token
         ? { Authorization: `Bearer ${token}` }
@@ -214,7 +215,7 @@ const Layout = ({ onLogout, user }) => {
   // update the transaction either is income or expense
   const editTransaction = async (id, transaction) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
 
       const headers = token
         ? { Authorization: `Bearer ${token}` }
@@ -247,7 +248,7 @@ const Layout = ({ onLogout, user }) => {
   // delete the transaction either is income or expense
   const deleteTransaction = async (id, type) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
 
       const headers = token
         ? { Authorization: `Bearer ${token}` }

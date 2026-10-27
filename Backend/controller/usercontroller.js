@@ -3,339 +3,138 @@ import validator from "validator";
 import bcrypt from "bcrypt";
 import createToken from "../utils/createToken.js";
 
+const bad = (res, message, status = 400) => res.status(status).json({ success: false, message });
+const serverError = (res, where, error) => {
+    console.error(`${where} ERROR:`, error.message);
+    return res.status(500).json({ success: false, message: "Server error" });
+};
+const isStr = (v) => typeof v === "string";
+const normEmail = (e) => (isStr(e) ? e.trim().toLowerCase() : e);
+
 // ================= REGISTER =================
-
 export async function register(req, res) {
+    const { name, password } = req.body || {};
+    const email = normEmail(req.body?.email);
 
-
-    const { name, email, password } = req.body;
-
-    // Check fields
-    if (!name || !email || !password) {
-        return res.status(400).json({
-            success: false,
-            message: "All fields are required",
-        });
+    if (!isStr(name) || !name.trim() || !isStr(email) || !email || !isStr(password) || !password) {
+        return bad(res, "All fields are required");
     }
-
-    // Check email
-    if (!validator.isEmail(email)) {
-        return res.status(400).json({
-            success: false,
-            message: "Email is invalid",
-        });
-    }
-
-    // Check password length
-    if (password.length < 8) {
-        return res.status(400).json({
-            success: false,
-            message: "Password must be at least 8 characters",
-        });
-    }
+    if (name.trim().length > 100) return bad(res, "Name is too long");
+    if (!validator.isEmail(email)) return bad(res, "Email is invalid");
+    if (password.length < 8) return bad(res, "Password must be at least 8 characters");
+    if (password.length > 72) return bad(res, "Password must be at most 72 characters"); // bcrypt limit
 
     try {
+        if (await user.findOne({ email })) return bad(res, "User already exists", 409);
 
-        // Check existing user
-        const existingUser = await user.findOne({ email });
-
-        if (existingUser) {
-            return res.status(409).json({
-                success: false,
-                message: "User already exists",
-            });
-        }
-
-        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Create user
-        const newUser = await user.create({
-            name,
-            email,
-            password: hashedPassword,
-        });
-
-        // Create JWT
+        const newUser = await user.create({ name: name.trim(), email, password: hashedPassword });
         const token = createToken(newUser._id);
 
         return res.status(201).json({
             success: true,
             message: "User registered successfully",
             token,
-            user: {
-                id: newUser._id,
-                name: newUser.name,
-                email: newUser.email,
-            },
+            user: { id: newUser._id, name: newUser.name, email: newUser.email },
         });
-
     } catch (error) {
-
-        console.error("🔥 REGISTER ERROR:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Server error",
-        });
+        if (error.code === 11000) return bad(res, "User already exists", 409);
+        return serverError(res, "REGISTER", error);
     }
 }
 
-
 // ================= LOGIN =================
-
 export async function login(req, res) {
+    const { password } = req.body || {};
+    const email = normEmail(req.body?.email);
 
-    const { email, password } = req.body;
-
-    // Check fields
-    if (!email || !password) {
-        return res.status(400).json({
-            success: false,
-            message: "Both fields are required",
-        });
-    }
-
-    // Validate email
-    if (!validator.isEmail(email)) {
-        return res.status(400).json({
-            success: false,
-            message: "Invalid email",
-        });
-    }
+    if (!isStr(email) || !email || !isStr(password) || !password) return bad(res, "Both fields are required");
+    if (!validator.isEmail(email)) return bad(res, "Invalid email");
 
     try {
-
-        // Find user
         const existingUser = await user.findOne({ email });
+        if (!existingUser) return bad(res, "Invalid email or password", 401);
 
-        if (!existingUser) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid email or password",
-            });
-        }
+        const match = await bcrypt.compare(password, existingUser.password);
+        if (!match) return bad(res, "Invalid email or password", 401);
 
-        // Compare password
-        const match = await bcrypt.compare(
-            password,
-            existingUser.password
-        );
-
-        if (!match) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid email or password",
-            });
-        }
-
-        // Create token
         const token = createToken(existingUser._id);
 
         return res.status(200).json({
             success: true,
             message: "Login successful",
             token,
-            user: {
-                id: existingUser._id,
-                name: existingUser.name,
-                email: existingUser.email,
-            },
+            user: { id: existingUser._id, name: existingUser.name, email: existingUser.email },
         });
-
     } catch (error) {
-
-        console.error("🔥 LOGIN ERROR:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Server error",
-        });
+        return serverError(res, "LOGIN", error);
     }
 }
-
 
 // ================= GET USER =================
-
 export async function getuser(req, res) {
-
     try {
-
-        const existingUser = await user
-            .findById(req.user.id)
-            .select("name email");
-
-        if (!existingUser) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found",
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            user: existingUser,
-        });
-
+        const existingUser = await user.findById(req.user._id).select("name email");
+        if (!existingUser) return bad(res, "User not found", 404);
+        return res.status(200).json({ success: true, user: existingUser });
     } catch (error) {
-
-        console.error("🔥 GET USER ERROR:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Server error",
-        });
+        return serverError(res, "GET USER", error);
     }
 }
-
 
 // ================= UPDATE USER =================
-
 export async function userupdate(req, res) {
+    const { name } = req.body || {};
+    const email = normEmail(req.body?.email);
 
-    const { name, email } = req.body;
-
-    // Check fields
-    if (!name || !email) {
-        return res.status(400).json({
-            success: false,
-            message: "Name and email are required",
-        });
-    }
-
-    // Validate email
-    if (!validator.isEmail(email)) {
-        return res.status(400).json({
-            success: false,
-            message: "Invalid email",
-        });
-    }
+    if (!isStr(name) || !name.trim() || !isStr(email) || !email) return bad(res, "Name and email are required");
+    if (name.trim().length > 100) return bad(res, "Name is too long");
+    if (!validator.isEmail(email)) return bad(res, "Invalid email");
 
     try {
-
-        // Check if email already belongs to another user
-        const exists = await user.findOne({
-            email,
-            _id: { $ne: req.user.id },
-        });
-
-        if (exists) {
-            return res.status(409).json({
-                success: false,
-                message: "Email is already in use",
-            });
+        if (await user.findOne({ email, _id: { $ne: req.user._id } })) {
+            return bad(res, "Email is already in use", 409);
         }
 
-        // Update user
-        const updatedUser = await user.findByIdAndUpdate(
-            req.user.id,
-            {
-                name,
-                email,
-            },
-            {
-                new: true,
-                runValidators: true,
-            }
-        ).select("name email");
+        const updatedUser = await user
+            .findByIdAndUpdate(req.user._id, { name: name.trim(), email }, { new: true, runValidators: true })
+            .select("name email");
+        if (!updatedUser) return bad(res, "User not found", 404);
 
-        if (!updatedUser) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found",
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "Profile updated successfully",
-            user: updatedUser,
-        });
-
+        return res.status(200).json({ success: true, message: "Profile updated successfully", user: updatedUser });
     } catch (error) {
-
-        console.error("🔥 USER UPDATE ERROR:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Server error",
-        });
+        if (error.code === 11000) return bad(res, "Email is already in use", 409);
+        return serverError(res, "USER UPDATE", error);
     }
 }
 
-
 // ================= UPDATE PASSWORD =================
-
 export async function passwordupdate(req, res) {
+    const { currentpassword, newpassword } = req.body || {};
 
-    const { currentpassword, newpassword } = req.body;
-
-    // Check fields
-    if (!currentpassword || !newpassword) {
-        return res.status(400).json({
-            success: false,
-            message: "Current password and new password are required",
-        });
+    if (!isStr(currentpassword) || !currentpassword || !isStr(newpassword) || !newpassword) {
+        return bad(res, "Current password and new password are required");
     }
-
-    // Check new password length
-    if (newpassword.length < 8) {
-        return res.status(400).json({
-            success: false,
-            message: "New password must be at least 8 characters",
-        });
-    }
+    if (newpassword.length < 8) return bad(res, "New password must be at least 8 characters");
+    if (newpassword.length > 72) return bad(res, "New password must be at most 72 characters");
 
     try {
+        const existingUser = await user.findById(req.user._id);
+        if (!existingUser) return bad(res, "User not found", 404);
 
-        // Find user
-        const existingUser = await user
-            .findById(req.user.id)
-            .select("password");
+        const match = await bcrypt.compare(currentpassword, existingUser.password);
+        // 400 (not 401) so the frontend doesn't treat a typo as an expired session
+        if (!match) return bad(res, "Current password is incorrect", 400);
 
-        if (!existingUser) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found",
-            });
-        }
-
-        // Check current password
-        const match = await bcrypt.compare(
-            currentpassword,
-            existingUser.password
-        );
-
-        if (!match) {
-            return res.status(401).json({
-                success: false,
-                message: "Current password is incorrect",
-            });
-        }
-
-        // Hash new password
-        const hashedPassword = await bcrypt.hash(
-            newpassword,
-            10
-        );
-
-        // Save new password
-        existingUser.password = hashedPassword;
-
+        existingUser.password = await bcrypt.hash(newpassword, 10);
+        existingUser.passwordChangedAt = new Date();
         await existingUser.save();
 
-        return res.status(200).json({
-            success: true,
-            message: "Password updated successfully",
-        });
+        // Old tokens are now invalid; hand back a fresh one for this session
+        const token = createToken(existingUser._id);
 
+        return res.status(200).json({ success: true, message: "Password updated successfully", token });
     } catch (error) {
-
-        console.error("🔥 PASSWORD UPDATE ERROR:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Server error",
-        });
+        return serverError(res, "PASSWORD UPDATE", error);
     }
 }
